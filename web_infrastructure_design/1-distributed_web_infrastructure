@@ -1,0 +1,112 @@
+# Web Infrastructure Design for www.foobar.com
+
+This document outlines a web infrastructure design for hosting the website `www.foobar.com`. It describes the components involved, explains their roles, and addresses some key questions regarding the design.
+
+## Requirements
+
+### 1. Components of the Infrastructure
+
+The infrastructure is composed of the following components:
+
+- **2 servers**
+- **1 web server (Nginx)**
+- **1 application server**
+- **1 load-balancer (HAProxy)**
+- **1 set of application files (your code base)**
+- **1 database (MySQL)**
+
+### 2. Why These Components?
+
+- **2 Servers**: Having two separate servers ensures redundancy, which is essential for high availability. One server could act as a backup if the other goes down, and you could scale services as needed (for example, having a dedicated web server and application server).
+
+- **Web Server (Nginx)**: Nginx handles HTTP requests from clients. It can serve static content like HTML, CSS, JavaScript, images, etc. Additionally, it can act as a reverse proxy to forward dynamic requests to the application server. This separation of concerns helps optimize the infrastructure, as static and dynamic content can be served by different processes.
+
+- **Application Server**: This server is responsible for the execution of the application logic. It serves as the backend, processing data, handling requests (such as login or fetching dynamic content), and communicating with the database.
+
+- **Load Balancer (HAProxy)**: The load balancer distributes traffic between the available servers. This helps in managing the load, improving the performance of the website, and preventing overload on a single server. Using HAProxy adds an extra layer of fault tolerance.
+
+- **Application Files**: The application files contain your code (business logic, routes, configurations, etc.). Having these files on a separate server allows the app to be more manageable and independent, which is useful for debugging or deploying updates.
+
+- **MySQL Database**: The MySQL database stores all persistent data for the application, such as user accounts, posts, or other website information. Having a separate database layer from the application layer makes it easier to manage and scale storage and database operations.
+
+### 3. Distribution Algorithm for the Load Balancer
+
+The **HAProxy** load balancer is configured using the **Round Robin** distribution algorithm. This algorithm sends incoming requests to the servers in a circular order. When a request comes in, the load balancer forwards it to the first available server. After the request is processed, the next request is sent to the following server in the list. This approach ensures that traffic is balanced evenly across all servers and prevents any individual server from becoming overloaded.
+
+### 4. Active-Active vs. Active-Passive Load Balancer Setup
+
+- **Active-Active Setup**: In this configuration, the load balancer distributes traffic to multiple servers that are all actively processing requests. This helps balance the load efficiently and ensures high availability if one of the servers fails. In case one server goes down, the others continue to handle incoming traffic.
+
+- **Active-Passive Setup**: Only one server handles traffic under normal conditions (the Active node), while the other server (Passive node) remains idle, waiting to take over if the Active node fails. This setup can reduce costs by saving resources, but it introduces a Single Point of Failure (SPOF) for the system.
+
+**In this setup, we are using an Active-Active configuration for better load distribution and high availability.**
+
+### 5. Primary-Replica (Master-Slave) MySQL Cluster
+
+In this architecture, we have a **Primary Database (Master)** and a **Replica Database (Slave)**:
+
+- **Primary (Master) Database**: This is where all write operations (INSERT, UPDATE, DELETE) take place. It ensures that the data is the authoritative source for modifications.
+
+- **Replica (Slave) Database**: This database is a read-only copy of the Primary database. It replicates the data from the Primary database. It handles SELECT queries (read requests), which helps offload traffic from the Primary database.
+
+**Difference between Primary and Replica in regard to the application:**
+- **Primary** is responsible for any write operations or changing data.
+- **Replica** handles read queries and thus helps with balancing read traffic, enhancing the system's scalability by distributing load.
+
+The **Primary-Replica setup** ensures that read operations do not overload the Primary database and that data is replicated across multiple nodes for high availability and reliability.
+
+### 6. Issues with This Infrastructure
+
+While this infrastructure is functional, it presents several potential issues:
+
+#### 6.1 Single Point of Failure (SPOF)
+
+- **Load Balancer**: If the load balancer goes down, there is no way to distribute traffic to other servers, making the entire system inaccessible.
+
+- **Primary Database**: If the Primary (Master) database fails, write operations cannot occur, halting functionality for users trying to add or modify data.
+
+**Solutions:**
+- Implementing a failover load balancer setup and considering clustering for the MySQL database (Master-Master replication) can mitigate these risks.
+
+#### 6.2 Security Issues
+
+- **No Firewall**: The infrastructure is exposed to potential threats without an additional layer of protection to control incoming and outgoing traffic.
+
+- **No HTTPS**: The system lacks encryption, making sensitive data vulnerable to interception.
+
+**Solutions:**
+- Add firewalls to restrict traffic.
+- Enforce **HTTPS** across all communications to ensure that data transmitted over the network is secure.
+
+#### 6.3 No Monitoring
+
+- There is no system in place to monitor the health of the servers, databases, or the entire infrastructure. If something breaks, it may take time to detect the issue.
+
+**Solution:**
+- Implementing a **monitoring system** like **Prometheus**, **Grafana**, or **Nagios** will allow the infrastructure to be monitored in real-time. Alerts can be configured for server failures, database issues, or spikes in traffic.
+
+### 7. Conclusion
+
+This infrastructure design includes essential components for building a robust web application, such as a load balancer (HAProxy), web server (Nginx), and a database cluster (MySQL Primary-Replica). However, it requires additional improvements in terms of security, monitoring, and redundancy to ensure reliability, scalability, and protection against failures.
+
+Future enhancements include implementing a failover mechanism for SPOFs, securing the infrastructure with firewalls and HTTPS, and adding robust monitoring tools to detect issues early.
+
+
+```mermaid
+graph TD
+
+    A[User] --> B[Load Balancer HAProxy]
+    B --> C[Web Server Nginx]
+    C --> D[Application Server]
+    D --> E[Application Files Code Base]
+    E --> F[Database Cluster]
+    F --> G[Primary Database MySQL]
+    F --> H[Replica Database MySQL]
+    B --> I[Load Balancer HAProxy]
+    I --> J[Web Server Nginx]
+    J --> K[Application Server]
+    K --> L[Application Files Code Base]
+    L --> M[Database Cluster]
+    M --> N[Primary Database MySQL]
+    M --> O[Replica Database MySQL]
+
