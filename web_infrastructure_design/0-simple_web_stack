@@ -1,0 +1,74 @@
+
+## Explanation
+
+### 1. **What is a Server?**
+   - A **server** is a physical or virtual machine that hosts and serves content. It processes incoming requests from users and sends back the appropriate response, such as web pages or data.
+
+### 2. **What is the Role of the Domain Name?**
+   - The **domain name** (`www.foobar.com`) provides an easy-to-remember address that allows users to access the website. It is mapped to the server’s IP address (`8.8.8.8`) using DNS records.
+
+### 3. **What Type of DNS Record is `www` in `www.foobar.com`?**
+   - The **DNS record** is typically an **A record** for `www.foobar.com` pointing directly to `8.8.8.8` (the server’s IP address). It may also be a CNAME if `www.foobar.com` points to `foobar.com`.
+
+### 4. **What is the Role of the Web Server?**
+   - The **web server (Nginx)** serves static content directly (like HTML, CSS, JavaScript files), and acts as a **reverse proxy**, forwarding requests for dynamic content to the **application server**.
+
+### 5. **What is the Role of the Application Server?**
+   - The **application server** runs the website's application code, interacting with the database and handling any business logic that generates dynamic content.
+
+### 6. **What is the Role of the Database?**
+   - The **MySQL database** stores structured data like user information, content, posts, and other essential data required by the website.
+
+### 7. **How Does the Server Communicate with the User's Computer?**
+   - Users access the website via their browser by typing `www.foobar.com`. A DNS request is resolved to `8.8.8.8`, where Nginx listens and processes the HTTP requests.
+   - **Web Server** (Nginx) handles static requests or forwards them to the **application server**, which communicates with the **database** to serve dynamic content.
+
+---
+
+## Issues with This Infrastructure
+
+### 1. **Single Point of Failure (SPOF)**
+
+   - **Problem**: If the server goes down, the website becomes unavailable.
+   - **Solution**: Adding multiple servers and load balancing helps remove SPOF, but with a single server, it remains vulnerable to failure.
+
+### 2. **Downtime During Maintenance**
+
+   - **Problem**: Performing tasks like updating code or restarting services will result in downtime.
+   - **Solution**: In larger systems, you use rolling updates, where updates occur without taking the site offline. This setup isn't possible with one server.
+
+### 3. **Scalability Issues**
+
+   - **Problem**: As traffic increases, a single server will not handle the load efficiently, leading to performance degradation or crashes.
+   - **Solution**: For scalability, adding more servers, databases, and using load balancers can handle more traffic effectively.
+
+---
+
+## Conclusion
+
+While the design using a **single server** to host `www.foobar.com` is ideal for small-scale websites or testing, it introduces potential limitations such as **SPOF**, **downtime** during maintenance, and lack of **scalability**. For a production-ready system, introducing more servers and scalable infrastructure would be necessary.
+
+---
+
+## Additional Notes
+
+### DNS:
+- **www.foobar.com** points to `8.8.8.8` through an **A record** (or CNAME) in DNS.
+
+### Web Server:
+- The **Nginx** server handles all incoming requests for static content and forwards dynamic requests to the application layer.
+
+### Application Server:
+- It handles the application's code and queries the **MySQL database** when needed for dynamic content generation.
+
+
+```mermaid
+
+graph TD
+    A[User/Client Request] --> B[DNS Resolution]
+    B --> C[Server IP: 8.8.8.8]
+    C --> D[Nginx Web Server]
+    D --> E[Application Server]
+    G--> F[MySQL Database]
+    E--> G[Application Files Code Base]
+
