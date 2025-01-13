@@ -1,0 +1,110 @@
+# Three Server Web Infrastructure for www.foobar.com
+
+This document outlines the design and explanation of a three-server web infrastructure for **www.foobar.com**, ensuring secure, encrypted traffic and comprehensive monitoring.
+
+## Infrastructure Components
+
+### 1. **Firewalls (3)**
+
+#### **Purpose**:
+Firewalls are crucial for ensuring the security of the infrastructure. They serve as gatekeepers, controlling incoming and outgoing traffic, preventing unauthorized access, and protecting against malicious activity.
+
+- **Firewall 1**: Placed between external users and the load balancer, blocking harmful traffic and allowing only authorized connections.
+- **Firewall 2**: Sits between the load balancer and the web servers to control internal network traffic.
+- **Firewall 3**: Ensures only authorized connections can access the database, securing it against unauthorized data access.
+
+### 2. **SSL Certificate**
+
+#### **Purpose**:
+The SSL certificate encrypts the data transmitted between users and the web servers. It ensures secure HTTPS connections, preventing eavesdropping, data manipulation, and fraud.
+
+- **Why HTTPS?**: HTTPS is essential to secure sensitive data such as passwords, credit card details, and personal information. It also assures users that the website they are accessing is genuine via certificate validation.
+
+### 3. **Monitoring Clients (3)**
+
+#### **Purpose**:
+Monitoring clients are deployed to track the health and performance of the infrastructure, collecting data from the web servers and other critical components.
+
+- **Tools for Monitoring**: Services like Sumologic, Prometheus, or Datadog can be used to collect and analyze data.
+- **How Monitoring Works**: Agents installed on each web server collect performance data such as CPU usage, memory consumption, network activity, and more. This data is sent to the monitoring service for real-time analysis and reporting.
+
+### 4. **Load Balancer**
+
+#### **Purpose**:
+The load balancer distributes incoming traffic to different web servers based on the current load, improving scalability and fault tolerance.
+
+- **Why it is important?**: The load balancer ensures no server is overloaded and distributes traffic evenly. It maximizes uptime and minimizes delays.
+
+### 5. **Web Servers (3)**
+
+#### **Purpose**:
+These servers host web content and handle HTTP(S) requests from users.
+
+- **Why Three Web Servers?**: Using three web servers ensures redundancy. If one fails, traffic is redirected to the remaining servers, ensuring continued operation.
+
+### 6. **Application Servers**
+
+#### **Purpose**:
+The application servers process business logic and interact with the database to serve dynamic content requested by users.
+
+### 7. **MySQL Database & Replica**
+
+- **Primary Database**: The authoritative source for all write requests.
+- **Replica Database**: Holds a copy of the primary database and serves read requests. Separating read and write queries improves performance and scalability.
+
+## Security Considerations
+
+### 1. **Why Terminating SSL at Load Balancer Level is an Issue**
+
+#### **Explanation**:
+SSL termination at the load balancer decrypts HTTPS traffic before it reaches the web servers. While saving resources for the web servers, it introduces a potential security risk. If the traffic between the load balancer and web servers is not encrypted, an attacker could intercept the data, compromising security.
+
+- **Solution**: Encrypt the internal traffic between the load balancer and web servers to maintain end-to-end encryption.
+
+### 2. **Why Having Only One MySQL Server Capable of Accepting Writes is an Issue**
+
+#### **Explanation**:
+With a single writable MySQL server, any failure leads to the database becoming unavailable for writes, impacting functionality. This creates a single point of failure (SPOF), increasing downtime risk.
+
+- **Solution**: Implement database replication with multiple writable databases or use a primary-replica setup with failover mechanisms to ensure redundancy and availability.
+
+### 3. **Why Having Servers with All the Same Components Might Be a Problem**
+
+#### **Explanation**:
+Servers hosting all components (database, web server, application server) make scaling and fault tolerance challenging.
+
+- **Issues**:
+  - **Scalability**: Shared resources (CPU, memory, disk) limit the ability to scale components independently.
+  - **Single Point of Failure**: If any server fails, it impacts all components (web server, application server, database).
+
+- **Solution**: Decouple components into separate servers for better scalability and reliability.
+
+### 4. **QPS (Queries Per Second) Monitoring**
+
+#### **Explanation**:
+To monitor web server QPS (queries per second), you would configure your monitoring tools to track the HTTP requests handled by the web servers.
+
+- **Data Tracked**:
+  - Number of HTTP requests per second handled by each server.
+  - Traffic trends and potential bottlenecks.
+
+Monitoring QPS helps ensure that servers handle traffic efficiently, optimizing performance.
+
+## Infrastructure Diagram
+
+```mermaid
+graph TD
+    A[User] --> B[Firewall 1]
+    B --> C[Load Balancer]
+    C --> D[Web Server 1]
+    C --> E[Web Server 2]
+    C --> F[Web Server 3]
+    D --> G[Application Server]
+    E --> G[Application Server]
+    F --> G[Application Server]
+    G --> H[MySQL Database]
+    H --> I[Replica MySQL Database]
+    D --> J[SSL Certificate]
+    D --> K[Monitoring Client 1]
+    E --> L[Monitoring Client 2]
+    F --> M[Monitoring Client 3]
