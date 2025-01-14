@@ -1,0 +1,101 @@
+# README - Application Server vs Web Server Infrastructure
+
+## Description
+
+This document outlines the architecture and requirements for setting up a distributed infrastructure that includes an application server, web server, load balancer (HAProxy), and database servers. The goal is to create a scalable, fault-tolerant, and efficient environment for deploying applications.
+
+### Table of Contents
+
+- [Overview](#overview)
+- [Infrastructure Components](#infrastructure-components)
+  - [Web Server](#web-server)
+  - [Application Server](#application-server)
+  - [Database Server](#database-server)
+  - [Load Balancer (HAProxy)](#load-balancer-haproxy)
+- [Architecture Diagram](#architecture-diagram)
+  - [Why HAProxy?](#why-haproxy)
+- [Additional Notes](#additional-notes)
+
+---
+
+## Overview
+
+This infrastructure setup separates the components into dedicated servers for scalability and high availability. Each server will play a specific role in serving the web application, ensuring that traffic is balanced and services are distributed efficiently.
+
+---
+
+## Infrastructure Components
+
+### Web Server
+
+A **web server** is responsible for serving static content, handling incoming HTTP requests, and delivering responses. It forwards dynamic content requests to the application server for further processing.
+
+- The web server will be configured with the **Nginx** or **Apache HTTP** server.
+- It handles tasks like routing requests, SSL termination, and managing static assets (images, stylesheets, JavaScript files).
+
+### Application Server
+
+An **application server** hosts the backend of the application and processes dynamic content. It interacts with the database and serves the necessary data to the web server.
+
+- The application server can use technologies such as **Node.js**, **Django**, **Flask**, or **Java** for backend processing.
+- The application server will handle requests routed from the web server, perform business logic, and fetch data from the database as needed.
+
+### Database Server
+
+The **database server** stores all persistent data required by the application. It is responsible for handling queries and providing data to the application server.
+
+- A **MySQL**, **PostgreSQL**, or **MongoDB** database can be used, depending on the application’s requirements.
+- The database server will be configured with appropriate redundancy and backups to ensure data availability and durability.
+
+### Load Balancer (HAProxy)
+
+**HAProxy** is a powerful, high-performance load balancer that will distribute incoming traffic across multiple web and application servers. It improves performance, provides fault tolerance, and ensures high availability.
+
+- HAProxy will balance load across multiple web servers, ensuring that no single server becomes a bottleneck.
+- It will be configured in a **clustered** setup for redundancy and reliability.
+
+---
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    WebServer1[Web Server 1]
+    WebServer2[Web Server 2]
+    WebServer3[Web Server 3]
+    LoadBalancer[Load Balancer HAProxy]
+    AppServer1[Application Server 1]
+    AppServer2[Application Server 2]
+    DBServer1[Database Server 1]
+    DBServer2[Database Server 2]
+
+    WebServer1 --> LoadBalancer
+    WebServer2 --> LoadBalancer
+    WebServer3 --> LoadBalancer
+    LoadBalancer --> AppServer1
+    LoadBalancer --> AppServer2
+    AppServer1 --> DBServer1
+    AppServer1 --> DBServer2
+    AppServer2 --> DBServer1
+    AppServer2 --> DBServer2
+```
+
+### Why HAProxy?
+
+HAProxy is used as a load balancer to distribute incoming traffic between the web servers and application servers. It provides fault tolerance and high availability by ensuring that if one server goes down, traffic is rerouted to other healthy servers.
+
+- **High Availability**: HAProxy ensures that traffic is routed to available servers even in the case of server failures.
+- **Scalability**: As traffic increases, new servers can be added to the pool, and HAProxy will automatically balance the load.
+- **Redundancy**: HAProxy can be configured in a clustered setup to ensure continuous service even if one load balancer fails.
+
+---
+
+## Additional Notes
+
+- **Security**: Ensure that communication between servers is secure using encryption and firewalls to limit access to only trusted servers.
+- **Monitoring**: Set up monitoring tools (such as Prometheus, Grafana, or ELK stack) to track the health and performance of each component in the infrastructure.
+- **Backups**: Regular backups of the database should be taken to ensure data integrity and availability in case of a failure.
+
+---
+
+This architecture provides a flexible, scalable, and fault-tolerant infrastructure for modern web applications, where each component can be independently managed and scaled as required.
